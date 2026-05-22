@@ -25,5 +25,5 @@
         "arcade",
         "microbit"
     ],
-    "preferredEditor": "pyprj"
+    "preferredEditor": "tsprj"
 }
