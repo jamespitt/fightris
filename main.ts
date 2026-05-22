@@ -7,7 +7,7 @@ let STEP = CELL + 1
 //  13px per cell (1px gap)
 let OX = 35
 //  grid origin x  (centres 91px grid on 160px screen)
-let OY = 14
+let OY = 10
 //  grid origin y
 let C_GRID = 13
 //  dark navy  — empty water
@@ -150,8 +150,8 @@ function redraw() {
     
     let bg = scene.backgroundImage()
     bg.fill(C_BG)
-    let grid = viewMine ? mine : atk
-    let title = viewMine ? "DEFENCE" : "ATTACK"
+    let grid = (phase == Phase.SETUP || viewMine) ? mine : atk
+    let title = phase == Phase.SETUP ? "MY FLEET" : (viewMine ? "DEFENCE" : "ATTACK")
     bg.printCenter(title, 3, 15)
     for (let s = 0; s < GRID; s++) {
         for (let c = 0; c < GRID; c++) {
@@ -174,7 +174,7 @@ function redraw() {
         drawPlacement(bg)
     }
     
-    if ((phase == Phase.MY_TURN || phase == Phase.SETUP) && !viewMine) {
+    if (phase == Phase.SETUP || (phase == Phase.MY_TURN && !viewMine)) {
         drawCursor(bg)
     }
     
@@ -504,7 +504,6 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function on_b_pressed() {
     
 })
 //  ── Boot ─────────────────────────────────────────────────────────────────────
-game.splash("BATTLESHIPS", "Place your fleet!")
 resetGrids()
 phase = Phase.SETUP
 shipIdx = 0
@@ -514,4 +513,5 @@ horiz = true
 iSentReady = false
 theyAreReady = false
 hitCount = 0
+game.splash("BATTLESHIPS", "Place your fleet!")
 redraw()
