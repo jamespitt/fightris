@@ -317,7 +317,7 @@ radio.onReceivedString(function my_function(msg: string) {
         if (hitCount >= TOTAL_CELLS) {
             soundWin()
             phase = Phase.DONE
-            game.over(true, effects.confetti)
+            game.over(true)
         } else {
             if (msg == "SUNK") { soundSunk() } else { soundHit() }
             phase = Phase.ENEMY_TURN
