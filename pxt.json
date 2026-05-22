@@ -1,22 +1,12 @@
 {
-    "name": "square rescue",
-    "description": "",
+    "name": "battleships",
+    "description": "Two-player Battleships via radio. 7x7 grid, ships 2-2-3-3.",
     "dependencies": {
-        "device": "*",
-        "color-coded-tilemap": "*",
-        "pxt-status-bar": "github:jwunderl/pxt-status-bar#v0.3.1",
-        "storyboard": "*",
-        "arcade-text": "github:microsoft/arcade-text#v1.3.0",
-        "animation": "*",
-        "arcade-minimap": "github:microsoft/arcade-minimap#v0.6.1",
-        "settings-blocks": "github:microsoft/pxt-settings-blocks#v1.0.0"
+        "device": "*"
     },
     "files": [
-        "main.blocks",
         "main.ts",
-        "README.md",
-        "tilemap.g.jres",
-        "tilemap.g.ts"
+        "README.md"
     ],
     "testFiles": [
         "test.ts"
@@ -32,5 +22,5 @@
     "supportedTargets": [
         "arcade"
     ],
-    "preferredEditor": "blocksprj"
+    "preferredEditor": "tsprj"
 }
