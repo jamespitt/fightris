@@ -1,50 +1,140 @@
-// Battleships — MakeCode Arcade, two players via radio
-// 7×7 grid, ships: 2, 2, 3, 3
+//  Battleships — MakeCode Arcade, two players via radio
+//  7×7 grid, ships: 2, 2, 3, 3
+//  ── Constants ────────────────────────────────────────────────────────────────
+let GRID = 7
+let CELL = 12
+let STEP = CELL + 1
+//  13px per cell (1px gap)
+let OX = 35
+//  grid origin x  (centres 91px grid on 160px screen)
+let OY = 14
+//  grid origin y
+let C_GRID = 13
+//  dark navy  — empty water
+let C_SHIP = 6
+//  green      — your ship (defence view)
+let C_HIT = 2
+//  red        — hit
+let C_MISS = 1
+//  white      — miss
+let C_SUNK = 4
+//  orange     — sunk ship
+let C_CURSOR = 5
+//  yellow     — cursor outline
+let C_BG = 15
+//  black      — background
+let SHIPS = [2, 2, 3, 3]
+let TOTAL_CELLS = 10
+//  2+2+3+3
+//  ── State ────────────────────────────────────────────────────────────────────
+class Phase {
+    static SETUP: number
+    private ___SETUP_is_set: boolean
+    private ___SETUP: number
+    get SETUP(): number {
+        return this.___SETUP_is_set ? this.___SETUP : Phase.SETUP
+    }
+    set SETUP(value: number) {
+        this.___SETUP_is_set = true
+        this.___SETUP = value
+    }
+    
+    static WAITING: number
+    private ___WAITING_is_set: boolean
+    private ___WAITING: number
+    get WAITING(): number {
+        return this.___WAITING_is_set ? this.___WAITING : Phase.WAITING
+    }
+    set WAITING(value: number) {
+        this.___WAITING_is_set = true
+        this.___WAITING = value
+    }
+    
+    static MY_TURN: number
+    private ___MY_TURN_is_set: boolean
+    private ___MY_TURN: number
+    get MY_TURN(): number {
+        return this.___MY_TURN_is_set ? this.___MY_TURN : Phase.MY_TURN
+    }
+    set MY_TURN(value: number) {
+        this.___MY_TURN_is_set = true
+        this.___MY_TURN = value
+    }
+    
+    static PENDING: number
+    private ___PENDING_is_set: boolean
+    private ___PENDING: number
+    get PENDING(): number {
+        return this.___PENDING_is_set ? this.___PENDING : Phase.PENDING
+    }
+    set PENDING(value: number) {
+        this.___PENDING_is_set = true
+        this.___PENDING = value
+    }
+    
+    static ENEMY_TURN: number
+    private ___ENEMY_TURN_is_set: boolean
+    private ___ENEMY_TURN: number
+    get ENEMY_TURN(): number {
+        return this.___ENEMY_TURN_is_set ? this.___ENEMY_TURN : Phase.ENEMY_TURN
+    }
+    set ENEMY_TURN(value: number) {
+        this.___ENEMY_TURN_is_set = true
+        this.___ENEMY_TURN = value
+    }
+    
+    static DONE: number
+    private ___DONE_is_set: boolean
+    private ___DONE: number
+    get DONE(): number {
+        return this.___DONE_is_set ? this.___DONE : Phase.DONE
+    }
+    set DONE(value: number) {
+        this.___DONE_is_set = true
+        this.___DONE = value
+    }
+    
+    public static __initPhase() {
+        Phase.SETUP = 0
+        Phase.WAITING = 1
+        Phase.MY_TURN = 2
+        Phase.PENDING = 3
+        Phase.ENEMY_TURN = 4
+        Phase.DONE = 5
+    }
+    
+}
 
-// ── Constants ────────────────────────────────────────────────────────────────
-const GRID = 7
-const CELL = 12
-const STEP = CELL + 1          // 13px per cell (1px gap)
-const OX = 35                  // grid origin x  (centres 91px grid on 160px screen)
-const OY = 14                  // grid origin y
-
-const C_GRID   = 13   // dark navy  — empty water
-const C_SHIP   = 6    // green      — your ship (defence view)
-const C_HIT    = 2    // red        — hit
-const C_MISS   = 1    // white      — miss
-const C_SUNK   = 4    // orange     — sunk ship
-const C_CURSOR = 5    // yellow     — cursor outline
-const C_BG     = 15   // black      — background
-
-const SHIPS = [2, 2, 3, 3]
-const TOTAL_CELLS = 10         // 2+2+3+3
-
-// ── State ────────────────────────────────────────────────────────────────────
-enum Phase { SETUP, WAITING, MY_TURN, PENDING, ENEMY_TURN, DONE }
+Phase.__initPhase()
 
 let phase = Phase.SETUP
-let viewMine = false   // false = attack grid, true = my defence grid
-
-// Grids: 0=water 1=ship 2=miss 3=hit 4=sunk
-let mine: number[][] = []   // my board — ships + incoming shots
-let atk: number[][] = []    // my shots at the enemy
-
-let shipIdx = 0     // which ship we are currently placing (0–3)
-let cx = 0          // cursor column
-let cy = 0          // cursor row
-let horiz = true    // ship orientation during placement
-
-let fireX = 0       // position of the last shot fired
+let viewMine = false
+//  false = attack grid, true = my defence grid
+//  Grids: 0=water 1=ship 2=miss 3=hit 4=sunk
+let mine : number[][] = []
+//  my board — ships + incoming shots
+let atk : number[][] = []
+//  my shots at the enemy
+let shipIdx = 0
+//  which ship we are currently placing (0–3)
+let cx = 0
+//  cursor column
+let cy = 0
+//  cursor row
+let horiz = true
+//  ship orientation during placement
+let fireX = 0
+//  position of the last shot fired
 let fireY = 0
-
 let mySerial = 0
 let theirSerial = 0
 let iSentReady = false
 let theyAreReady = false
-let hitCount = 0    // cells I have hit on the enemy grid
-
-// ── Grid initialisation ──────────────────────────────────────────────────────
+let hitCount = 0
+//  cells I have hit on the enemy grid
+//  ── Grid initialisation ──────────────────────────────────────────────────────
 function resetGrids() {
+    
     mine = []
     atk = []
     for (let r = 0; r < GRID; r++) {
@@ -53,104 +143,145 @@ function resetGrids() {
     }
 }
 
-// ── Drawing ──────────────────────────────────────────────────────────────────
+//  ── Drawing ──────────────────────────────────────────────────────────────────
 function redraw() {
-    const bg = scene.backgroundImage()
+    let v: any;
+    let col: number;
+    
+    let bg = scene.backgroundImage()
     bg.fill(C_BG)
-
-    const grid = viewMine ? mine : atk
-    const title = viewMine ? "DEFENCE" : "ATTACK"
+    let grid = viewMine ? mine : atk
+    let title = viewMine ? "DEFENCE" : "ATTACK"
     bg.printCenter(title, 3, 15)
-
-    for (let r = 0; r < GRID; r++) {
+    for (let s = 0; s < GRID; s++) {
         for (let c = 0; c < GRID; c++) {
-            const v = grid[r][c]
-            let col = C_GRID
-            if (v === 1) col = viewMine ? C_SHIP : C_GRID
-            else if (v === 2) col = C_MISS
-            else if (v === 3) col = C_HIT
-            else if (v === 4) col = C_SUNK
-            bg.fillRect(OX + c * STEP, OY + r * STEP, CELL, CELL, col)
+            v = grid[s][c]
+            col = C_GRID
+            if (v == 1) {
+                col = viewMine ? C_SHIP : C_GRID
+            } else if (v == 2) {
+                col = C_MISS
+            } else if (v == 3) {
+                col = C_HIT
+            } else if (v == 4) {
+                col = C_SUNK
+            }
+            
+            bg.fillRect(OX + c * STEP, OY + s * STEP, CELL, CELL, col)
         }
     }
-
-    if (phase === Phase.SETUP) drawPlacement(bg)
-    if ((phase === Phase.MY_TURN || phase === Phase.SETUP) && !viewMine) drawCursor(bg)
+    if (phase == Phase.SETUP) {
+        drawPlacement(bg)
+    }
+    
+    if ((phase == Phase.MY_TURN || phase == Phase.SETUP) && !viewMine) {
+        drawCursor(bg)
+    }
+    
     drawStatus(bg)
 }
 
-function drawCursor(bg: Image) {
-    bg.drawRect(OX + cx * STEP - 1, OY + cy * STEP - 1, CELL + 2, CELL + 2, C_CURSOR)
+function drawCursor(bg2: Image) {
+    bg2.drawRect(OX + cx * STEP - 1, OY + cy * STEP - 1, CELL + 2, CELL + 2, C_CURSOR)
 }
 
-function drawPlacement(bg: Image) {
-    if (shipIdx >= SHIPS.length) return
-    const size = SHIPS[shipIdx]
-    const ok = canPlace(cx, cy, size, horiz)
+function drawPlacement(bg3: Image) {
+    let sc: number;
+    let sr: number;
+    if (shipIdx >= SHIPS.length) {
+        return
+    }
+    
+    let size = SHIPS[shipIdx]
+    let ok = canPlace(cx, cy, size, horiz)
     for (let i = 0; i < size; i++) {
-        const sc = cx + (horiz ? i : 0)
-        const sr = cy + (horiz ? 0 : i)
-        if (sc < GRID && sr < GRID)
-            bg.fillRect(OX + sc * STEP, OY + sr * STEP, CELL, CELL, ok ? C_SHIP : C_HIT)
+        sc = cx + (horiz ? i : 0)
+        sr = cy + (horiz ? 0 : i)
+        if (sc < GRID && sr < GRID) {
+            bg3.fillRect(OX + sc * STEP, OY + sr * STEP, CELL, CELL, ok ? C_SHIP : C_HIT)
+        }
+        
     }
 }
 
-function drawStatus(bg: Image) {
-    const sy = OY + GRID * STEP + 3
-    if (phase === Phase.SETUP) {
-        bg.print("Ship " + (shipIdx + 1) + "/4 sz:" + SHIPS[shipIdx], 4, sy, 15)
-        bg.print("A=place  B=rotate", 4, sy + 9, 11)
-    } else if (phase === Phase.WAITING) {
-        bg.printCenter("Waiting...", sy + 4, 11)
-    } else if (phase === Phase.MY_TURN) {
-        bg.print("Your turn   B=view", 4, sy, 5)
-    } else if (phase === Phase.PENDING) {
-        bg.print("Waiting...  B=view", 4, sy, 5)
-    } else if (phase === Phase.ENEMY_TURN) {
-        bg.print("Enemy turn  B=view", 4, sy, 2)
+function drawStatus(bg4: Image) {
+    let sy = OY + GRID * STEP + 3
+    if (phase == Phase.SETUP) {
+        bg4.print("Ship " + ("" + (shipIdx + 1)) + "/4 sz:" + ("" + SHIPS[shipIdx]), 4, sy, 15)
+        bg4.print("A=place  B=rotate", 4, sy + 9, 11)
+    } else if (phase == Phase.WAITING) {
+        bg4.printCenter("Waiting...", sy + 4, 11)
+    } else if (phase == Phase.MY_TURN) {
+        bg4.print("Your turn   B=view", 4, sy, 5)
+    } else if (phase == Phase.PENDING) {
+        bg4.print("Waiting...  B=view", 4, sy, 5)
+    } else if (phase == Phase.ENEMY_TURN) {
+        bg4.print("Enemy turn  B=view", 4, sy, 2)
     }
+    
 }
 
-// ── Ship placement ───────────────────────────────────────────────────────────
-function canPlace(x: number, y: number, size: number, h: boolean): boolean {
-    for (let i = 0; i < size; i++) {
-        const sc = x + (h ? i : 0)
-        const sr = y + (h ? 0 : i)
-        if (sc >= GRID || sr >= GRID || mine[sr][sc] !== 0) return false
+//  ── Ship placement ───────────────────────────────────────────────────────────
+function canPlace(x: number, y: number, size2: number, h: boolean): boolean {
+    let sc2: number;
+    let sr2: number;
+    for (let j = 0; j < size2; j++) {
+        sc2 = x + (h ? j : 0)
+        sr2 = y + (h ? 0 : j)
+        if (sc2 >= GRID || sr2 >= GRID || mine[sr2][sc2] != 0) {
+            return false
+        }
+        
     }
     return true
 }
 
 function doPlace() {
-    const size = SHIPS[shipIdx]
-    if (!canPlace(cx, cy, size, horiz)) return
-    for (let i = 0; i < size; i++) {
-        const sc = cx + (horiz ? i : 0)
-        const sr = cy + (horiz ? 0 : i)
-        mine[sr][sc] = 1
+    let sc3: number;
+    let sr3: number;
+    
+    let size3 = SHIPS[shipIdx]
+    if (!canPlace(cx, cy, size3, horiz)) {
+        return
     }
-    shipIdx++
-    if (shipIdx >= SHIPS.length) readyUp()
+    
+    for (let k = 0; k < size3; k++) {
+        sc3 = cx + (horiz ? k : 0)
+        sr3 = cy + (horiz ? 0 : k)
+        mine[sr3][sc3] = 1
+    }
+    shipIdx += 1
+    if (shipIdx >= SHIPS.length) {
+        readyUp()
+    }
+    
     redraw()
 }
 
-// ── Sync / turn order ────────────────────────────────────────────────────────
+//  ── Sync / turn order ────────────────────────────────────────────────────────
 function readyUp() {
+    
     mySerial = control.deviceSerialNumber()
     phase = Phase.WAITING
     iSentReady = true
-    radio.sendString("READY:" + mySerial)
-    if (theyAreReady) decide()
-    else redraw()
+    radio.sendString("READY:" + ("" + mySerial))
+    if (theyAreReady) {
+        decide()
+    } else {
+        redraw()
+    }
+    
 }
 
 function decide() {
-    // Tiebreak by serial number; if somehow equal, whoever sent first goes first.
-    const iGoFirst = mySerial !== theirSerial ? mySerial > theirSerial : iSentReady && !theyAreReady
+    
+    //  Tiebreak by serial number; if somehow equal, whoever sent first goes first.
+    let iGoFirst = mySerial != theirSerial ? mySerial > theirSerial : iSentReady && !theyAreReady
     startBattle(iGoFirst)
 }
 
 function startBattle(first: boolean) {
+    
     phase = first ? Phase.MY_TURN : Phase.ENEMY_TURN
     viewMine = false
     redraw()
@@ -158,22 +289,24 @@ function startBattle(first: boolean) {
     redraw()
 }
 
-// ── Radio ────────────────────────────────────────────────────────────────────
+//  ── Radio ────────────────────────────────────────────────────────────────────
 radio.setGroup(42)
-
-radio.onReceivedString(function (msg: string) {
-    if (msg.length >= 6 && msg.substr(0, 6) === "READY:") {
+radio.onReceivedString(function my_function(msg: string) {
+    let parts: string[];
+    
+    if (msg.length >= 6 && msg.substr(0, 6) == "READY:") {
         theirSerial = parseInt(msg.substr(6))
         theyAreReady = true
-        if (iSentReady) decide()
-
-    } else if (msg.length >= 5 && msg.substr(0, 5) === "FIRE:") {
-        const parts = msg.substr(5).split(",")
+        if (iSentReady) {
+            decide()
+        }
+        
+    } else if (msg.length >= 5 && msg.substr(0, 5) == "FIRE:") {
+        parts = msg.substr(5).split(",")
         incomingShot(parseInt(parts[0]), parseInt(parts[1]))
-
-    } else if (msg === "HIT" || msg === "SUNK") {
+    } else if (msg == "HIT" || msg == "SUNK") {
         atk[fireY][fireX] = 3
-        hitCount++
+        hitCount += 1
         if (hitCount >= TOTAL_CELLS) {
             phase = Phase.DONE
             game.over(true, effects.confetti)
@@ -181,22 +314,24 @@ radio.onReceivedString(function (msg: string) {
             phase = Phase.ENEMY_TURN
             redraw()
         }
-
-    } else if (msg === "MISS") {
+        
+    } else if (msg == "MISS") {
         atk[fireY][fireX] = 2
         phase = Phase.ENEMY_TURN
         redraw()
     }
+    
 })
-
-function incomingShot(x: number, y: number) {
+function incomingShot(x2: number, y2: number) {
+    let totalHit: any;
+    
     let response = "MISS"
-    if (mine[y][x] === 1) {
-        mine[y][x] = 3
-        if (shipSunk(x, y)) {
-            markSunk(x, y)
+    if (mine[y2][x2] == 1) {
+        mine[y2][x2] = 3
+        if (shipSunk(x2, y2)) {
+            markSunk(x2, y2)
             response = "SUNK"
-            const totalHit = countVal(mine, 3) + countVal(mine, 4)
+            totalHit = countVal(mine, 3) + countVal(mine, 4)
             if (totalHit >= TOTAL_CELLS) {
                 radio.sendString(response)
                 phase = Phase.DONE
@@ -204,88 +339,171 @@ function incomingShot(x: number, y: number) {
                 game.over(false)
                 return
             }
+            
         } else {
             response = "HIT"
         }
+        
     } else {
-        mine[y][x] = 2
+        mine[y2][x2] = 2
     }
+    
     radio.sendString(response)
     phase = Phase.MY_TURN
     redraw()
 }
 
-function countVal(grid: number[][], val: number): number {
+function countVal(grid2: number[][], val: number): number {
     let n = 0
-    for (let r = 0; r < GRID; r++)
-        for (let c = 0; c < GRID; c++)
-            if (grid[r][c] === val) n++
+    for (let t = 0; t < GRID; t++) {
+        for (let d = 0; d < GRID; d++) {
+            if (grid2[t][d] == val) {
+                n += 1
+            }
+            
+        }
+    }
     return n
 }
 
-// Returns true if the ship occupying (x,y) has all its cells hit (value 3).
-function shipSunk(x: number, y: number): boolean {
-    let lx = x; while (lx > 0 && (mine[y][lx - 1] === 1 || mine[y][lx - 1] === 3)) lx--
-    let rx = x; while (rx < GRID - 1 && (mine[y][rx + 1] === 1 || mine[y][rx + 1] === 3)) rx++
+//  Returns true if the ship occupying (x,y) has all its cells hit (value 3).
+function shipSunk(x3: number, y3: number): boolean {
+    let l: number;
+    let lx = x3
+    while (lx > 0 && (mine[y3][lx - 1] == 1 || mine[y3][lx - 1] == 3)) {
+        lx -= 1
+    }
+    let rx = x3
+    while (rx < GRID - 1 && (mine[y3][rx + 1] == 1 || mine[y3][rx + 1] == 3)) {
+        rx += 1
+    }
     if (rx > lx) {
-        for (let i = lx; i <= rx; i++) if (mine[y][i] !== 3) return false
+        l = lx
+        while (l <= rx) {
+            if (mine[y3][l] != 3) {
+                return false
+            }
+            
+            l += 1
+        }
         return true
     }
-    let ty = y; while (ty > 0 && (mine[ty - 1][x] === 1 || mine[ty - 1][x] === 3)) ty--
-    let by = y; while (by < GRID - 1 && (mine[by + 1][x] === 1 || mine[by + 1][x] === 3)) by++
-    for (let i = ty; i <= by; i++) if (mine[i][x] !== 3) return false
+    
+    let ty = y3
+    while (ty > 0 && (mine[ty - 1][x3] == 1 || mine[ty - 1][x3] == 3)) {
+        ty -= 1
+    }
+    let by = y3
+    while (by < GRID - 1 && (mine[by + 1][x3] == 1 || mine[by + 1][x3] == 3)) {
+        by += 1
+    }
+    let m = ty
+    while (m <= by) {
+        if (mine[m][x3] != 3) {
+            return false
+        }
+        
+        m += 1
+    }
     return true
 }
 
-// Changes all hit (3) cells of the ship at (x,y) to sunk (4).
-function markSunk(x: number, y: number) {
-    let lx = x; while (lx > 0 && (mine[y][lx - 1] === 3 || mine[y][lx - 1] === 4)) lx--
-    let rx = x; while (rx < GRID - 1 && (mine[y][rx + 1] === 3 || mine[y][rx + 1] === 4)) rx++
-    if (rx > lx) { for (let i = lx; i <= rx; i++) mine[y][i] = 4; return }
-    let ty = y; while (ty > 0 && (mine[ty - 1][x] === 3 || mine[ty - 1][x] === 4)) ty--
-    let by = y; while (by < GRID - 1 && (mine[by + 1][x] === 3 || mine[by + 1][x] === 4)) by++
-    for (let i = ty; i <= by; i++) mine[i][x] = 4
+//  Changes all hit (3) cells of the ship at (x,y) to sunk (4).
+function markSunk(x4: number, y4: number) {
+    let o: number;
+    let lx2 = x4
+    while (lx2 > 0 && (mine[y4][lx2 - 1] == 3 || mine[y4][lx2 - 1] == 4)) {
+        lx2 -= 1
+    }
+    let rx2 = x4
+    while (rx2 < GRID - 1 && (mine[y4][rx2 + 1] == 3 || mine[y4][rx2 + 1] == 4)) {
+        rx2 += 1
+    }
+    if (rx2 > lx2) {
+        o = lx2
+        while (o <= rx2) {
+            mine[y4][o] = 4
+            o += 1
+        }
+        return
+    }
+    
+    let ty2 = y4
+    while (ty2 > 0 && (mine[ty2 - 1][x4] == 3 || mine[ty2 - 1][x4] == 4)) {
+        ty2 -= 1
+    }
+    let by2 = y4
+    while (by2 < GRID - 1 && (mine[by2 + 1][x4] == 3 || mine[by2 + 1][x4] == 4)) {
+        by2 += 1
+    }
+    let p = ty2
+    while (p <= by2) {
+        mine[p][x4] = 4
+        p += 1
+    }
 }
 
-// ── Controls ─────────────────────────────────────────────────────────────────
-controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (cx > 0) { cx--; redraw() }
+//  ── Controls ─────────────────────────────────────────────────────────────────
+controller.left.onEvent(ControllerButtonEvent.Pressed, function on_left_pressed() {
+    
+    if (cx > 0) {
+        cx -= 1
+        redraw()
+    }
+    
 })
-controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (cx < GRID - 1) { cx++; redraw() }
+controller.right.onEvent(ControllerButtonEvent.Pressed, function on_right_pressed() {
+    
+    if (cx < GRID - 1) {
+        cx += 1
+        redraw()
+    }
+    
 })
-controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (cy > 0) { cy--; redraw() }
+controller.up.onEvent(ControllerButtonEvent.Pressed, function on_up_pressed() {
+    
+    if (cy > 0) {
+        cy -= 1
+        redraw()
+    }
+    
 })
-controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (cy < GRID - 1) { cy++; redraw() }
+controller.down.onEvent(ControllerButtonEvent.Pressed, function on_down_pressed() {
+    
+    if (cy < GRID - 1) {
+        cy += 1
+        redraw()
+    }
+    
 })
-
-controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (phase === Phase.SETUP) {
+controller.A.onEvent(ControllerButtonEvent.Pressed, function on_a_pressed() {
+    
+    if (phase == Phase.SETUP) {
         doPlace()
-    } else if (phase === Phase.MY_TURN && !viewMine) {
-        if (atk[cy][cx] === 0) {
+    } else if (phase == Phase.MY_TURN && !viewMine) {
+        if (atk[cy][cx] == 0) {
             fireX = cx
             fireY = cy
-            radio.sendString("FIRE:" + cx + "," + cy)
+            radio.sendString("FIRE:" + ("" + cx) + "," + ("" + cy))
             phase = Phase.PENDING
             redraw()
         }
+        
     }
+    
 })
-
-controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (phase === Phase.SETUP) {
+controller.B.onEvent(ControllerButtonEvent.Pressed, function on_b_pressed() {
+    
+    if (phase == Phase.SETUP) {
         horiz = !horiz
         redraw()
-    } else if (phase !== Phase.DONE) {
+    } else if (phase != Phase.DONE) {
         viewMine = !viewMine
         redraw()
     }
+    
 })
-
-// ── Boot ─────────────────────────────────────────────────────────────────────
+//  ── Boot ─────────────────────────────────────────────────────────────────────
 game.splash("BATTLESHIPS", "Place your fleet!")
 resetGrids()
 phase = Phase.SETUP
