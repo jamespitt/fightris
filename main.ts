@@ -315,14 +315,17 @@ radio.onReceivedString(function my_function(msg: string) {
         atk[fireY][fireX] = 3
         hitCount += 1
         if (hitCount >= TOTAL_CELLS) {
+            soundWin()
             phase = Phase.DONE
             game.over(true, effects.confetti)
         } else {
+            if (msg == "SUNK") { soundSunk() } else { soundHit() }
             phase = Phase.ENEMY_TURN
             redraw()
         }
-        
+
     } else if (msg == "MISS") {
+        soundMiss()
         atk[fireY][fireX] = 2
         phase = Phase.ENEMY_TURN
         redraw()
