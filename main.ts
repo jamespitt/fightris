@@ -170,10 +170,16 @@ function redraw() {
             bg.fillRect(OX + c * STEP, OY + s * STEP, CELL, CELL, col)
         }
     }
+    if (phase == Phase.MY_TURN || phase == Phase.PENDING || phase == Phase.ENEMY_TURN) {
+        let borderCol = phase == Phase.MY_TURN ? 7 : (phase == Phase.PENDING ? 5 : 2)
+        bg.drawRect(OX - 2, OY - 2, GRID * STEP + 3, GRID * STEP + 3, borderCol)
+        bg.drawRect(OX - 1, OY - 1, GRID * STEP + 1, GRID * STEP + 1, borderCol)
+    }
+
     if (phase == Phase.SETUP) {
         drawPlacement(bg)
     }
-    
+
     if (phase == Phase.SETUP || (phase == Phase.MY_TURN && !viewMine)) {
         drawCursor(bg)
     }
