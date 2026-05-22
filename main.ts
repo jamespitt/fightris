@@ -344,17 +344,20 @@ function incomingShot(x2: number, y2: number) {
             totalHit = countVal(mine, 3) + countVal(mine, 4)
             if (totalHit >= TOTAL_CELLS) {
                 radio.sendString(response)
+                soundLose()
                 phase = Phase.DONE
                 redraw()
                 game.over(false)
                 return
             }
-            
+            soundSunk()
         } else {
+            soundHit()
             response = "HIT"
         }
-        
+
     } else {
+        soundMiss()
         mine[y2][x2] = 2
     }
     
