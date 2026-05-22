@@ -2,7 +2,8 @@
     "name": "battleships",
     "description": "Two-player Battleships via radio. 7x7 grid, ships 2-2-3-3.",
     "dependencies": {
-        "device": "*"
+        "device": "*",
+        "radio": "*"
     },
     "files": [
         "main.ts",
@@ -15,12 +16,13 @@
         "branch": "v1.2.6",
         "tag": "v1.2.6",
         "commits": "https://github.com/microsoft/pxt-arcade/commits/7f343e1ba30a4c31de6b7b14d288d34b2741b2f4",
-        "target": "4.0.14",
+        "target": "8.0.22",
         "pxt": "6.2.21",
-        "targetId": "arcade"
+        "targetId": "microbit"
     },
     "supportedTargets": [
-        "arcade"
+        "arcade",
+        "microbit"
     ],
     "preferredEditor": "tsprj"
 }
