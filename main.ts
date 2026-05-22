@@ -325,6 +325,10 @@ radio.onReceivedString(function my_function(msg: string) {
             redraw()
         }
 
+    } else if (msg == "NUDGE") {
+        if (phase == Phase.PENDING) {
+            radio.sendString("FIRE:" + fireX + "," + fireY)
+        }
     } else if (msg == "MISS") {
         if (phase != Phase.PENDING) return
         soundMiss()
@@ -334,9 +338,17 @@ radio.onReceivedString(function my_function(msg: string) {
     }
     
 })
-game.onUpdateInterval(2000, function () {
-    if (phase == Phase.PENDING) {
-        radio.sendString("FIRE:" + fireX + "," + fireY)
+// Retry loop — runs forever in the background on both devices.
+// PENDING:      resend our FIRE in case the packet was lost.
+// ENEMY_TURN:   send NUDGE so the other device knows to resend its FIRE if stuck.
+control.runInBackground(function () {
+    while (true) {
+        pause(2000)
+        if (phase == Phase.PENDING) {
+            radio.sendString("FIRE:" + fireX + "," + fireY)
+        } else if (phase == Phase.ENEMY_TURN) {
+            radio.sendString("NUDGE")
+        }
     }
 })
 
