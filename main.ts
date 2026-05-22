@@ -158,7 +158,7 @@ function redraw() {
             v = grid[s][c]
             col = C_GRID
             if (v == 1) {
-                col = viewMine ? C_SHIP : C_GRID
+                col = (phase == Phase.SETUP || viewMine) ? C_SHIP : C_GRID
             } else if (v == 2) {
                 col = C_MISS
             } else if (v == 3) {
@@ -312,6 +312,7 @@ radio.onReceivedString(function my_function(msg: string) {
         parts = msg.substr(5).split(",")
         incomingShot(parseInt(parts[0]), parseInt(parts[1]))
     } else if (msg == "HIT" || msg == "SUNK") {
+        if (phase != Phase.PENDING) return
         atk[fireY][fireX] = 3
         hitCount += 1
         if (hitCount >= TOTAL_CELLS) {
@@ -325,6 +326,7 @@ radio.onReceivedString(function my_function(msg: string) {
         }
 
     } else if (msg == "MISS") {
+        if (phase != Phase.PENDING) return
         soundMiss()
         atk[fireY][fireX] = 2
         phase = Phase.ENEMY_TURN
@@ -332,9 +334,20 @@ radio.onReceivedString(function my_function(msg: string) {
     }
     
 })
+game.onUpdateInterval(2000, function () {
+    if (phase == Phase.PENDING) {
+        radio.sendString("FIRE:" + fireX + "," + fireY)
+    }
+})
+
 function incomingShot(x2: number, y2: number) {
     let totalHit: any;
-    
+    // Duplicate FIRE (retry): resend the original response without reprocessing
+    let existing = mine[y2][x2]
+    if (existing == 2) { radio.sendString("MISS"); return }
+    if (existing == 3) { radio.sendString("HIT"); return }
+    if (existing == 4) { radio.sendString("SUNK"); return }
+
     let response = "MISS"
     if (mine[y2][x2] == 1) {
         mine[y2][x2] = 3
