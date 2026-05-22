@@ -256,6 +256,7 @@ function doPlace() {
         sr3 = cy + (horiz ? 0 : k)
         mine[sr3][sc3] = 1
     }
+    soundPlace()
     shipIdx += 1
     if (shipIdx >= SHIPS.length) {
         readyUp()
@@ -449,6 +450,57 @@ function markSunk(x4: number, y4: number) {
     }
 }
 
+//  ── Sounds ───────────────────────────────────────────────────────────────────
+function soundPlace() {
+    music.playTone(523, 80)
+}
+
+function soundFire() {
+    control.runInBackground(function () {
+        music.playTone(880, 50)
+        music.playTone(660, 50)
+        music.playTone(440, 80)
+    })
+}
+
+function soundHit() {
+    control.runInBackground(function () {
+        music.playTone(220, 100)
+        music.playTone(165, 160)
+    })
+}
+
+function soundMiss() {
+    music.playTone(196, 200)
+}
+
+function soundSunk() {
+    control.runInBackground(function () {
+        music.playTone(262, 70)
+        music.playTone(330, 70)
+        music.playTone(392, 70)
+        music.playTone(523, 220)
+    })
+}
+
+function soundWin() {
+    control.runInBackground(function () {
+        music.playTone(523, 100)
+        music.playTone(659, 100)
+        music.playTone(784, 100)
+        music.playTone(1047, 350)
+    })
+}
+
+function soundLose() {
+    control.runInBackground(function () {
+        music.playTone(392, 150)
+        music.playTone(330, 150)
+        music.playTone(262, 200)
+        music.playTone(196, 350)
+    })
+}
+
 //  ── Controls ─────────────────────────────────────────────────────────────────
 controller.left.onEvent(ControllerButtonEvent.Pressed, function on_left_pressed() {
     
@@ -490,6 +542,7 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function on_a_pressed() {
         if (atk[cy][cx] == 0) {
             fireX = cx
             fireY = cy
+            soundFire()
             radio.sendString("FIRE:" + ("" + cx) + "," + ("" + cy))
             phase = Phase.PENDING
             redraw()
