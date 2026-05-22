@@ -375,6 +375,10 @@ function incomingShot(x2: number, y2: number) {
     }
     
     radio.sendString(response)
+    viewMine = true
+    redraw()
+    pause(2000)
+    viewMine = false
     phase = Phase.MY_TURN
     redraw()
 }
