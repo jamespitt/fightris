@@ -1,6 +1,6 @@
 {
-    "name": "battleships",
-    "description": "Two-player Battleships via radio. 7x7 grid, ships 2-2-3-3.",
+    "name": "fightris",
+    "description": "Simultaneous multiplayer Tetris with a real-time powerup economy via radio.",
     "dependencies": {
         "device": "*",
         "radio": "*"
